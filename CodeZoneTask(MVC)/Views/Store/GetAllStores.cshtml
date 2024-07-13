@@ -1,0 +1,58 @@
+﻿@model IEnumerable<CodeZoneTask_MVC_.ViewModels.StoreViewModel>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="text-center mb-4">All Stores</h2>
+            <a asp-action="AddStore" class="btn btn-primary mb-4">Add New Store</a>
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th class="text-center">Name</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var store in Model)
+                    {
+                        <tr>
+                            <td class="text-center">@store.Name</td>
+                            <td class="text-center">
+                                <form asp-action="EditStore" asp-route-id="@store.Id" method="get" class="d-inline">
+                                    <button type="submit" class="btn btn-primary btn-sm">Edit</button>
+                                </form>
+                                <form asp-action="DeleteStore" asp-route-id="@store.Id" method="get" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.Page <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="GetAllStores" asp-route-page="@(ViewBag.Page - 1)" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                            <a class="page-link" asp-action="GetAllStores" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.Page >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="GetAllStores" asp-route-page="@(ViewBag.Page + 1)" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
