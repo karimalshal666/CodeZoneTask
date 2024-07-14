@@ -29,12 +29,11 @@ namespace CodeZoneTask_MVC_.Controllers
             var transactionVm = new StockIncreaseViewModel
             {
                 Stores = await _storeRepository.GetAllAsync(),
-                TransactionType = transactionType // Adding transaction type to view model
+                TransactionType = transactionType
             };
 
-            // Map Items from Item to ItemViewModel
             var items = await _itemRepository.GetAllAsync();
-            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(items); // Mapping from Item to ItemViewModel
+            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(items); 
 
             if (storeId.HasValue && itemId.HasValue)
             {
@@ -87,7 +86,6 @@ namespace CodeZoneTask_MVC_.Controllers
                     {
                         await _storeItemRepository.AddAsync(new StoreItem { StoreId = transactionVm.StoreId.Value, ItemId = transactionVm.ItemId.Value, Quantity = transactionVm.Quantity });
                     }
-                    // Optionally handle selling case here if needed
                 }
 
                 return RedirectToAction("Transaction", new { storeId = transactionVm.StoreId, itemId = transactionVm.ItemId, transactionType = transactionVm.TransactionType });

@@ -14,5 +14,9 @@ namespace CodeZoneTask_MVC_.Repository
         {
             return await _context.Stores.ToListAsync();
         }
+        public async Task<Store> GetByNameAsync(string name)
+        {
+            return await _context.Stores.FirstOrDefaultAsync(s => s.Name == name);
+        }
     }
 }

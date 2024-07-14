@@ -2,7 +2,6 @@
 using CodeZoneTask_MVC_.Models;
 using CodeZoneTask_MVC_.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,9 +10,9 @@ namespace CodeZoneTask_MVC_.Controllers
 {
     public class StoreController : Controller
     {
-        private readonly IRepository<Store> _storeRepository;
+        private readonly IStoreRepository _storeRepository;
 
-        public StoreController(IRepository<Store> storeRepository)
+        public StoreController(IStoreRepository storeRepository)
         {
             _storeRepository = storeRepository;
         }
@@ -49,11 +48,19 @@ namespace CodeZoneTask_MVC_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStore(StoreViewModel viewModel)
         {
+            // Trim whitespace from store name
+            viewModel.Name = viewModel.Name?.Trim();
+
             if (ModelState.IsValid)
             {
+                if (string.IsNullOrWhiteSpace(viewModel.Name))
+                {
+                    ModelState.AddModelError("Name", "Store name cannot be empty.");
+                    return View(viewModel);
+                }
+
                 // Check if store name already exists
-                var stores = await _storeRepository.GetAllAsync();
-                var existingStore = stores.FirstOrDefault(s => s.Name == viewModel.Name);
+                var existingStore = await _storeRepository.GetByNameAsync(viewModel.Name);
 
                 if (existingStore != null)
                 {
@@ -70,6 +77,7 @@ namespace CodeZoneTask_MVC_.Controllers
             return View(viewModel);
         }
 
+
         [HttpGet]
         public async Task<IActionResult> EditStore(int id)
         {
@@ -82,18 +90,25 @@ namespace CodeZoneTask_MVC_.Controllers
             var viewModel = new StoreViewModel { Id = store.Id, Name = store.Name };
             return View(viewModel);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStore(StoreViewModel viewModel)
         {
+            // Trim whitespace from store name
+            viewModel.Name = viewModel.Name?.Trim();
+
             if (ModelState.IsValid)
             {
-                // Check if the new store name already exists
-                var stores = await _storeRepository.GetAllAsync();
-                var existingStore = stores.FirstOrDefault(s => s.Name == viewModel.Name && s.Id != viewModel.Id);
+                if (string.IsNullOrWhiteSpace(viewModel.Name))
+                {
+                    ModelState.AddModelError("Name", "Store name cannot be empty.");
+                    return View(viewModel);
+                }
 
-                if (existingStore != null)
+                // Check if the new store name already exists
+                var existingStore = await _storeRepository.GetByNameAsync(viewModel.Name);
+
+                if (existingStore != null && existingStore.Id != viewModel.Id)
                 {
                     ModelState.AddModelError("Name", "Store name already exists.");
                     return View(viewModel);
@@ -113,6 +128,7 @@ namespace CodeZoneTask_MVC_.Controllers
 
             return View(viewModel);
         }
+
 
         [HttpGet]
         public async Task<IActionResult> DeleteStore(int id)
