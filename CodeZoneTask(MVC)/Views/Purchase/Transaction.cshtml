@@ -76,8 +76,6 @@
 </div>
 
 @section Scripts {
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script>
         $(document).ready(function () {
             function updateCurrentBalance() {
@@ -118,7 +116,7 @@
                         $('#transactionAlert').html('<div class="alert alert-danger" role="alert">Cannot sell more than current balance.</div>');
                         setTimeout(function () {
                             $('#transactionAlert').html('');
-                        }, 5000); // Display error message for 5 seconds
+                        }, 5000); 
                         return;
                     }
 
@@ -131,7 +129,7 @@
                             $('#transactionAlert').html('<div class="alert alert-success" role="alert">Transaction submitted successfully.</div>');
                             setTimeout(function () {
                                 $('#transactionAlert').html('');
-                            }, 5000); // Display success message for 3 seconds
+                            }, 5000); 
                         },
                         error: function () {
                             $('#transactionAlert').html('<div class="alert alert-danger" role="alert">Error submitting transaction. Please try again later.</div>');

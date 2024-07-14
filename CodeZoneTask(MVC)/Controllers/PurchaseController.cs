@@ -1,10 +1,11 @@
-﻿using AutoMapper;
+﻿// PurchaseController.cs
+using AutoMapper;
 using CodeZoneTask_MVC_.Interfaces;
 using CodeZoneTask_MVC_.Models;
 using CodeZoneTask_MVC_.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CodeZoneTask_MVC_.Controllers
 {
@@ -33,7 +34,7 @@ namespace CodeZoneTask_MVC_.Controllers
             };
 
             var items = await _itemRepository.GetAllAsync();
-            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(items); 
+            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(items);
 
             if (storeId.HasValue && itemId.HasValue)
             {
@@ -41,9 +42,7 @@ namespace CodeZoneTask_MVC_.Controllers
 
                 if (storeItem != null)
                 {
-                    transactionVm.StoreId = storeId.Value;
-                    transactionVm.ItemId = itemId.Value;
-                    transactionVm.Quantity = storeItem.Quantity;
+                    _mapper.Map(storeItem, transactionVm); 
                 }
             }
 
@@ -66,7 +65,6 @@ namespace CodeZoneTask_MVC_.Controllers
                     }
                     else if (transactionVm.TransactionType == "sell")
                     {
-                        // Check if selling quantity exceeds current balance
                         if (transactionVm.Quantity > storeItem.Quantity)
                         {
                             ModelState.AddModelError("Quantity", "Selling quantity cannot exceed current balance.");
@@ -84,11 +82,13 @@ namespace CodeZoneTask_MVC_.Controllers
                 {
                     if (transactionVm.TransactionType == "purchase")
                     {
-                        await _storeItemRepository.AddAsync(new StoreItem { StoreId = transactionVm.StoreId.Value, ItemId = transactionVm.ItemId.Value, Quantity = transactionVm.Quantity });
+                        var newStoreItem = _mapper.Map<StoreItem>(transactionVm);
+                        await _storeItemRepository.AddAsync(newStoreItem);
                     }
                 }
 
-                return RedirectToAction("Transaction", new { storeId = transactionVm.StoreId, itemId = transactionVm.ItemId, transactionType = transactionVm.TransactionType });
+                var redirectParams = _mapper.Map<StockIncreaseViewModel>(transactionVm);
+                return RedirectToAction("Transaction", redirectParams);
             }
 
             transactionVm.Stores = await _storeRepository.GetAllAsync();
@@ -105,7 +105,7 @@ namespace CodeZoneTask_MVC_.Controllers
                 return Ok(storeItem.Quantity);
             }
 
-            return Ok(0); 
+            return Ok(0);
         }
     }
 }
