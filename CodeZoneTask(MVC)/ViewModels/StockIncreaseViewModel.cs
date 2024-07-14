@@ -18,9 +18,13 @@ namespace CodeZoneTask_MVC_.ViewModels
         public int Quantity { get; set; }
 
         public int Transaction { get; set; }
+        public string TransactionType { get; set; }
+
 
         public List<Store>? Stores { get; set; }
 
-        public List<Item>? Items { get; set; }
+        //public List<Item>? Items { get; set; }
+        public List<ItemViewModel>? Items { get; set; } // Use ItemViewModel instead of Item
+
     }
 }

@@ -47,9 +47,25 @@
                             <span asp-validation-for="Quantity" class="text-danger"></span>
                         </div>
 
+                        <div class="form-group">
+                            <label>Transaction Type:</label><br />
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="purchaseRadio" name="transactionType" value="purchase" checked>
+                                <label class="form-check-label" for="purchaseRadio">Purchase</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="sellRadio" name="transactionType" value="sell">
+                                <label class="form-check-label" for="sellRadio">Sell</label>
+                            </div>
+                        </div>
+
                         <div class="form-group mt-4">
-                            <button id="submitBtn" type="submit" class="btn btn-success">Submit</button>
-                            <a asp-action="GetAllStores" asp-controller="Store" class="btn btn-secondary ml-2">Back to All Stores</a>
+                            <button id="submitBtn" type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Submit
+                            </button>
+                            <a asp-action="GetAllStores" asp-controller="Store" class="btn btn-secondary ml-2">
+                                <i class="fas fa-arrow-left"></i> Back to All Stores
+                            </a>
                         </div>
                     </form>
                     <div id="transactionAlert" class="mt-3"></div>
@@ -94,6 +110,18 @@
                 event.preventDefault();
 
                 if ($(this).valid()) {
+                    var currentBalance = parseInt($('#currentBalance').val());
+                    var transactionType = $('input[name="transactionType"]:checked').val();
+                    var transactionQuantity = parseInt($('#transactionQuantity').val());
+
+                    if (transactionType === 'sell' && transactionQuantity > currentBalance) {
+                        $('#transactionAlert').html('<div class="alert alert-danger" role="alert">Cannot sell more than current balance.</div>');
+                        setTimeout(function () {
+                            $('#transactionAlert').html('');
+                        }, 5000); // Display error message for 5 seconds
+                        return;
+                    }
+
                     $.ajax({
                         url: $(this).attr('action'),
                         type: 'POST',
@@ -103,7 +131,7 @@
                             $('#transactionAlert').html('<div class="alert alert-success" role="alert">Transaction submitted successfully.</div>');
                             setTimeout(function () {
                                 $('#transactionAlert').html('');
-                            }, 3000);
+                            }, 5000); // Display success message for 3 seconds
                         },
                         error: function () {
                             $('#transactionAlert').html('<div class="alert alert-danger" role="alert">Error submitting transaction. Please try again later.</div>');

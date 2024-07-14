@@ -4,7 +4,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <h2 class="text-center mb-4">All Items</h2>
-            <a asp-action="AddItem" class="btn btn-primary mb-4">Add New Item</a>
+            <a asp-action="AddItem" class="btn btn-primary mb-4"><i class="fas fa-plus"></i> Add New Item</a>
             <table class="table table-bordered table-hover">
                 <thead class="thead-dark">
                     <tr>
@@ -19,10 +19,10 @@
                             <td class="text-center">@item.Name</td>
                             <td class="text-center">
                                 <form asp-action="EditItem" asp-route-id="@item.Id" method="get" class="d-inline">
-                                    <button type="submit" class="btn btn-primary btn-sm">Edit</button>
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-pencil-alt"></i> Edit</button>
                                 </form>
                                 <form asp-action="DeleteItem" asp-route-id="@item.Id" method="get" class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Delete</button>
                                 </form>
                             </td>
                         </tr>

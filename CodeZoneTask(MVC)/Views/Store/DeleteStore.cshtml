@@ -11,8 +11,12 @@
                     </div>
                     <form asp-action="DeleteConfirmed" method="post" class="mt-4 text-left">
                         <input type="hidden" asp-for="Id" />
-                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                        <a asp-action="GetAllStores" class="btn btn-secondary ml-2">Back</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Yes, Delete
+                        </button>
+                        <a asp-action="GetAllStores" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
                     </form>
                 </div>
             </div>

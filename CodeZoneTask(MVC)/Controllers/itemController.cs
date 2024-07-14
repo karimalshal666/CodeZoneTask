@@ -1,35 +1,47 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using CodeZoneTask_MVC_.Interfaces;
 using CodeZoneTask_MVC_.Models;
-using Microsoft.EntityFrameworkCore;
 using CodeZoneTask_MVC_.ViewModels;
-
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CodeZoneTask_MVC_.Controllers
 {
-    public class itemController : Controller
+    public class ItemController : Controller
     {
-        private readonly CodeZoneEntities _context;
+        private readonly IItemRepository _itemRepository;
+        private readonly IMapper _mapper;
 
-        public itemController(CodeZoneEntities context)
+        public ItemController(IItemRepository itemRepository, IMapper mapper)
         {
-            _context = context;
+            _itemRepository = itemRepository;
+            _mapper = mapper;
         }
+
         public async Task<IActionResult> GetAllItems(int? page)
         {
             int pageSize = 10;
             int pageNumber = page ?? 1;
 
-            var items = await _context.Items
+            var items = await _itemRepository.GetAllAsync();
+
+            var itemsViewModel = items
                 .OrderBy(i => i.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(i => new ItemViewModel { Id = i.Id, Name = i.Name })
-                .ToListAsync();
+                .Select(i => _mapper.Map<ItemViewModel>(i))
+                .ToList();
+
+            var totalItemsCount = items.Count; 
+            var totalPages = (int)Math.Ceiling(totalItemsCount / (double)pageSize);
 
             ViewBag.Page = pageNumber;
-            ViewBag.TotalPages = (int)Math.Ceiling(await _context.Items.CountAsync() / (double)pageSize);
+            ViewBag.TotalPages = totalPages;
 
-            return View(items);
+            return View(itemsViewModel);
         }
 
         [HttpGet]
@@ -41,21 +53,20 @@ namespace CodeZoneTask_MVC_.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddItem(ItemViewModel viewModel)
+        public async Task<IActionResult> AddItem(ItemViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
                 // Check if item name already exists
-                var existingItem = _context.Items.FirstOrDefault(i => i.Name == viewModel.Name);
+                var existingItem = await _itemRepository.GetByNameAsync(viewModel.Name);
                 if (existingItem != null)
                 {
                     ModelState.AddModelError("Name", "Item name already exists.");
                     return View(viewModel);
                 }
 
-                var newItem = new Item { Name = viewModel.Name };
-                _context.Items.Add(newItem);
-                _context.SaveChanges();
+                var newItem = _mapper.Map<Item>(viewModel);
+                await _itemRepository.AddAsync(newItem);
 
                 return RedirectToAction(nameof(GetAllItems));
             }
@@ -66,16 +77,15 @@ namespace CodeZoneTask_MVC_.Controllers
         [HttpGet]
         public async Task<IActionResult> EditItem(int id)
         {
-            var item = await _context.Items.FindAsync(id);
+            var item = await _itemRepository.GetByIdAsync(id);
             if (item == null)
             {
                 return NotFound();
             }
 
-            var viewModel = new ItemViewModel { Id = item.Id, Name = item.Name };
+            var viewModel = _mapper.Map<ItemViewModel>(item);
             return View(viewModel);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditItem(ItemViewModel viewModel)
@@ -83,24 +93,23 @@ namespace CodeZoneTask_MVC_.Controllers
             if (ModelState.IsValid)
             {
                 // Check if the new item name already exists
-                var existingItem = await _context.Items
-                    .FirstOrDefaultAsync(i => i.Name == viewModel.Name && i.Id != viewModel.Id);
+                var existingItem = await _itemRepository.GetByNameAsync(viewModel.Name);
 
-                if (existingItem != null)
+                if (existingItem != null && existingItem.Id != viewModel.Id)
                 {
                     ModelState.AddModelError("Name", "Item name already exists.");
                     return View(viewModel);
                 }
 
-                var item = await _context.Items.FindAsync(viewModel.Id);
-                if (item == null)
+                var itemToUpdate = await _itemRepository.GetByIdAsync(viewModel.Id);
+                if (itemToUpdate == null)
                 {
                     return NotFound();
                 }
 
-                item.Name = viewModel.Name;
-                _context.Update(item);
-                await _context.SaveChangesAsync();
+                _mapper.Map(viewModel, itemToUpdate);
+
+                await _itemRepository.UpdateAsync(itemToUpdate);
 
                 return RedirectToAction(nameof(GetAllItems));
             }
@@ -108,16 +117,18 @@ namespace CodeZoneTask_MVC_.Controllers
             return View(viewModel);
         }
 
+
+
         [HttpGet]
         public async Task<IActionResult> DeleteItem(int id)
         {
-            var item = await _context.Items.FindAsync(id);
+            var item = await _itemRepository.GetByIdAsync(id);
             if (item == null)
             {
                 return NotFound();
             }
 
-            var viewModel = new ItemViewModel { Id = item.Id, Name = item.Name };
+            var viewModel = _mapper.Map<ItemViewModel>(item);
             return View(viewModel);
         }
 
@@ -125,14 +136,12 @@ namespace CodeZoneTask_MVC_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var item = await _context.Items.FindAsync(id);
+            var item = await _itemRepository.GetByIdAsync(id);
             if (item != null)
             {
-                _context.Items.Remove(item);
-                await _context.SaveChangesAsync();
+                await _itemRepository.DeleteAsync(item);
             }
             return RedirectToAction(nameof(GetAllItems));
         }
-
     }
 }

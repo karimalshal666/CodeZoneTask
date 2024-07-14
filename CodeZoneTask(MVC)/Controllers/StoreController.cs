@@ -1,7 +1,9 @@
-﻿using CodeZoneTask_MVC_.Models;
+﻿using CodeZoneTask_MVC_.Interfaces;
+using CodeZoneTask_MVC_.Models;
 using CodeZoneTask_MVC_.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,11 +11,11 @@ namespace CodeZoneTask_MVC_.Controllers
 {
     public class StoreController : Controller
     {
-        private readonly CodeZoneEntities _context;
+        private readonly IRepository<Store> _storeRepository;
 
-        public StoreController(CodeZoneEntities context)
+        public StoreController(IRepository<Store> storeRepository)
         {
-            _context = context;
+            _storeRepository = storeRepository;
         }
 
         public async Task<IActionResult> GetAllStores(int? page)
@@ -21,17 +23,19 @@ namespace CodeZoneTask_MVC_.Controllers
             int pageSize = 10;
             int pageNumber = page ?? 1;
 
-            var stores = await _context.Stores
+            var stores = await _storeRepository.GetAllAsync();
+
+            var storesViewModel = stores
                 .OrderBy(s => s.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(s => new StoreViewModel { Id = s.Id, Name = s.Name })
-                .ToListAsync();
+                .ToList();
 
             ViewBag.Page = pageNumber;
-            ViewBag.TotalPages = (int)Math.Ceiling(await _context.Stores.CountAsync() / (double)pageSize);
+            ViewBag.TotalPages = (int)Math.Ceiling(stores.Count / (double)pageSize);
 
-            return View(stores);
+            return View(storesViewModel);
         }
 
         [HttpGet]
@@ -43,12 +47,14 @@ namespace CodeZoneTask_MVC_.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddStore(StoreViewModel viewModel)
+        public async Task<IActionResult> AddStore(StoreViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
                 // Check if store name already exists
-                var existingStore = _context.Stores.FirstOrDefault(s => s.Name == viewModel.Name);
+                var stores = await _storeRepository.GetAllAsync();
+                var existingStore = stores.FirstOrDefault(s => s.Name == viewModel.Name);
+
                 if (existingStore != null)
                 {
                     ModelState.AddModelError("Name", "Store name already exists.");
@@ -56,8 +62,7 @@ namespace CodeZoneTask_MVC_.Controllers
                 }
 
                 var newStore = new Store { Name = viewModel.Name };
-                _context.Stores.Add(newStore);
-                _context.SaveChanges();
+                await _storeRepository.AddAsync(newStore);
 
                 return RedirectToAction(nameof(GetAllStores));
             }
@@ -68,7 +73,7 @@ namespace CodeZoneTask_MVC_.Controllers
         [HttpGet]
         public async Task<IActionResult> EditStore(int id)
         {
-            var store = await _context.Stores.FindAsync(id);
+            var store = await _storeRepository.GetByIdAsync(id);
             if (store == null)
             {
                 return NotFound();
@@ -85,8 +90,8 @@ namespace CodeZoneTask_MVC_.Controllers
             if (ModelState.IsValid)
             {
                 // Check if the new store name already exists
-                var existingStore = await _context.Stores
-                    .FirstOrDefaultAsync(s => s.Name == viewModel.Name && s.Id != viewModel.Id);
+                var stores = await _storeRepository.GetAllAsync();
+                var existingStore = stores.FirstOrDefault(s => s.Name == viewModel.Name && s.Id != viewModel.Id);
 
                 if (existingStore != null)
                 {
@@ -94,15 +99,14 @@ namespace CodeZoneTask_MVC_.Controllers
                     return View(viewModel);
                 }
 
-                var store = await _context.Stores.FindAsync(viewModel.Id);
+                var store = await _storeRepository.GetByIdAsync(viewModel.Id);
                 if (store == null)
                 {
                     return NotFound();
                 }
 
                 store.Name = viewModel.Name;
-                _context.Update(store);
-                await _context.SaveChangesAsync();
+                await _storeRepository.UpdateAsync(store);
 
                 return RedirectToAction(nameof(GetAllStores));
             }
@@ -113,7 +117,7 @@ namespace CodeZoneTask_MVC_.Controllers
         [HttpGet]
         public async Task<IActionResult> DeleteStore(int id)
         {
-            var store = await _context.Stores.FindAsync(id);
+            var store = await _storeRepository.GetByIdAsync(id);
             if (store == null)
             {
                 return NotFound();
@@ -127,14 +131,12 @@ namespace CodeZoneTask_MVC_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var store = await _context.Stores.FindAsync(id);
+            var store = await _storeRepository.GetByIdAsync(id);
             if (store != null)
             {
-                _context.Stores.Remove(store);
-                await _context.SaveChangesAsync();
+                await _storeRepository.DeleteAsync(store);
             }
             return RedirectToAction(nameof(GetAllStores));
         }
-
     }
 }

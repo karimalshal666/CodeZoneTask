@@ -1,33 +1,44 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using CodeZoneTask_MVC_.Interfaces;
 using CodeZoneTask_MVC_.Models;
 using CodeZoneTask_MVC_.ViewModels;
-using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CodeZoneTask_MVC_.Controllers
 {
     public class PurchaseController : Controller
     {
-        private readonly CodeZoneEntities _context;
+        private readonly IStoreRepository _storeRepository;
+        private readonly IItemRepository _itemRepository;
+        private readonly IStoreItemRepository _storeItemRepository;
+        private readonly IMapper _mapper;
 
-        public PurchaseController(CodeZoneEntities context)
+        public PurchaseController(IStoreRepository storeRepository, IItemRepository itemRepository, IStoreItemRepository storeItemRepository, IMapper mapper)
         {
-            _context = context;
+            _storeRepository = storeRepository;
+            _itemRepository = itemRepository;
+            _storeItemRepository = storeItemRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public IActionResult Transaction(int? storeId, int? itemId)
+        public async Task<IActionResult> Transaction(int? storeId, int? itemId, string transactionType)
         {
             var transactionVm = new StockIncreaseViewModel
             {
-                Stores = _context.Stores.ToList(),
-                Items = _context.Items.ToList()
+                Stores = await _storeRepository.GetAllAsync(),
+                TransactionType = transactionType // Adding transaction type to view model
             };
+
+            // Map Items from Item to ItemViewModel
+            var items = await _itemRepository.GetAllAsync();
+            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(items); // Mapping from Item to ItemViewModel
 
             if (storeId.HasValue && itemId.HasValue)
             {
-                var storeItem = _context.StoreItems
-                    .FirstOrDefault(si => si.StoreId == storeId.Value && si.ItemId == itemId.Value);
+                var storeItem = await _storeItemRepository.GetByStoreAndItemAsync(storeId.Value, itemId.Value);
 
                 if (storeItem != null)
                 {
@@ -42,42 +53,61 @@ namespace CodeZoneTask_MVC_.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Transaction(StockIncreaseViewModel transactionVm)
+        public async Task<IActionResult> Transaction(StockIncreaseViewModel transactionVm)
         {
             if (ModelState.IsValid)
             {
-                var storeItem = _context.StoreItems
-                    .FirstOrDefault(si => si.StoreId == transactionVm.StoreId && si.ItemId == transactionVm.ItemId);
+                var storeItem = await _storeItemRepository.GetByStoreAndItemAsync(transactionVm.StoreId.Value, transactionVm.ItemId.Value);
 
                 if (storeItem != null)
                 {
-                    storeItem.Quantity += transactionVm.Quantity;
+                    if (transactionVm.TransactionType == "purchase")
+                    {
+                        storeItem.Quantity += transactionVm.Quantity;
+                    }
+                    else if (transactionVm.TransactionType == "sell")
+                    {
+                        // Check if selling quantity exceeds current balance
+                        if (transactionVm.Quantity > storeItem.Quantity)
+                        {
+                            ModelState.AddModelError("Quantity", "Selling quantity cannot exceed current balance.");
+                            transactionVm.Stores = await _storeRepository.GetAllAsync();
+                            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(await _itemRepository.GetAllAsync());
+                            return View(transactionVm);
+                        }
+
+                        storeItem.Quantity -= transactionVm.Quantity;
+                    }
+
+                    await _storeItemRepository.UpdateAsync(storeItem);
                 }
                 else
                 {
-                    _context.StoreItems.Add(new StoreItem { StoreId = transactionVm.StoreId.Value, ItemId = transactionVm.ItemId.Value, Quantity = transactionVm.Quantity });
+                    if (transactionVm.TransactionType == "purchase")
+                    {
+                        await _storeItemRepository.AddAsync(new StoreItem { StoreId = transactionVm.StoreId.Value, ItemId = transactionVm.ItemId.Value, Quantity = transactionVm.Quantity });
+                    }
+                    // Optionally handle selling case here if needed
                 }
-                _context.SaveChanges();
 
-                return RedirectToAction("Transaction", new { storeId = transactionVm.StoreId, itemId = transactionVm.ItemId });
+                return RedirectToAction("Transaction", new { storeId = transactionVm.StoreId, itemId = transactionVm.ItemId, transactionType = transactionVm.TransactionType });
             }
 
-            transactionVm.Stores = _context.Stores.ToList();
-            transactionVm.Items = _context.Items.ToList();
+            transactionVm.Stores = await _storeRepository.GetAllAsync();
+            transactionVm.Items = _mapper.Map<List<ItemViewModel>>(await _itemRepository.GetAllAsync());
             return View(transactionVm);
         }
 
-        public IActionResult Balance(int storeId, int itemId)
+        public async Task<IActionResult> Balance(int storeId, int itemId)
         {
-            var storeItem = _context.StoreItems
-                .FirstOrDefault(si => si.StoreId == storeId && si.ItemId == itemId);
+            var storeItem = await _storeItemRepository.GetByStoreAndItemAsync(storeId, itemId);
 
             if (storeItem != null)
             {
-                return Ok(storeItem.Quantity); // Return current balance (quantity) if found
+                return Ok(storeItem.Quantity);
             }
 
-            return Ok(0); // Return 0 if no row found for the store and item
+            return Ok(0);
         }
     }
 }
