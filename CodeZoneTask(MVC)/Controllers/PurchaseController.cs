@@ -105,7 +105,7 @@ namespace CodeZoneTask_MVC_.Controllers
                 return Ok(storeItem.Quantity);
             }
 
-            return Ok(0);
+            return Ok(0); 
         }
     }
 }
