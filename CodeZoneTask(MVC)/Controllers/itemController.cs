@@ -102,7 +102,6 @@ namespace CodeZoneTask_MVC_.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Trim whitespace from item name
                 viewModel.Name = viewModel.Name?.Trim();
 
                 if (string.IsNullOrWhiteSpace(viewModel.Name))
@@ -111,10 +110,8 @@ namespace CodeZoneTask_MVC_.Controllers
                     return View(viewModel);
                 }
 
-                // Check if the new item name already exists (after trimming whitespace)
                 var existingItem = await _itemRepository.GetByNameAsync(viewModel.Name);
 
-                // Ensure we don't find the same item when only trimming whitespace
                 if (existingItem != null && existingItem.Id != viewModel.Id)
                 {
                     ModelState.AddModelError("Name", "Item name already exists.");

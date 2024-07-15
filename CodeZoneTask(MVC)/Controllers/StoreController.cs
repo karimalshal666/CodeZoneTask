@@ -94,7 +94,6 @@ namespace CodeZoneTask_MVC_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStore(StoreViewModel viewModel)
         {
-            // Trim whitespace from store name
             viewModel.Name = viewModel.Name?.Trim();
 
             if (ModelState.IsValid)
@@ -105,7 +104,6 @@ namespace CodeZoneTask_MVC_.Controllers
                     return View(viewModel);
                 }
 
-                // Check if the new store name already exists
                 var existingStore = await _storeRepository.GetByNameAsync(viewModel.Name);
 
                 if (existingStore != null && existingStore.Id != viewModel.Id)
