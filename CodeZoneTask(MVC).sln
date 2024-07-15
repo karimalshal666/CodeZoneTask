@@ -5,7 +5,7 @@ VisualStudioVersion = 17.9.34714.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeZoneTask(MVC)", "CodeZoneTask(MVC)\CodeZoneTask(MVC).csproj", "{D2B5ADEE-B325-4C84-B32F-D8CA37C27A80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeZoneTask_MVC.Repository", "CodeZoneTask_MVC.Repository\CodeZoneTask_MVC.Repository.csproj", "{EE57DFF3-6F56-4C04-89EF-B2B13AD3D770}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeZoneTask_MVC_", "CodeZoneTask_MVC.Repository\CodeZoneTask_MVC_.csproj", "{EE57DFF3-6F56-4C04-89EF-B2B13AD3D770}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

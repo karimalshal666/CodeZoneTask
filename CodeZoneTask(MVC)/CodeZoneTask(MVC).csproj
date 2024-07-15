@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CodeZoneTask_MVC.Repository\CodeZoneTask_MVC.Repository.csproj" />
+    <ProjectReference Include="..\CodeZoneTask_MVC.Repository\CodeZoneTask_MVC_.csproj" />
   </ItemGroup>
 
 </Project>
